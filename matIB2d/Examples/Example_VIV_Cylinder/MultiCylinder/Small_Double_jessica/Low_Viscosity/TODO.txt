@@ -1,0 +1,1 @@
+Copy main, geometry, and input file in here and adjust viscosity

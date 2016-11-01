@@ -1,0 +1,3 @@
+Modeled this after Example_Channel_Flow/Example_Flow_Around_Cylinder
+
+NOTE: NO springs, beams, damped springs
