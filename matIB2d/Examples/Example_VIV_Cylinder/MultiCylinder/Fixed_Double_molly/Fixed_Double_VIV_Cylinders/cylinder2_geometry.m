@@ -29,13 +29,13 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function VIV_Cylinder2_Geometry()
+function cylinder2_geometry()
 
 %
 % Grid Parameters (MAKE SURE MATCHES IN input2d !!!)
 %
-Nx =  256;        % # of Eulerian Grid Pts. in x-Direction (MUST BE EVEN!!!)
-Ny =  256;        % # of Eulerian Grid Pts. in y-Direction (MUST BE EVEN!!!)
+Nx = 256;        % # of Eulerian Grid Pts. in x-Direction (MUST BE EVEN!!!)
+Ny = 256;        % # of Eulerian Grid Pts. in y-Direction (MUST BE EVEN!!!)
 Lx = 1.0;        % Length of Eulerian Grid in x-Direction
 Ly = 1.0;        % Length of Eulerian Grid in y-Direction
 
@@ -47,18 +47,23 @@ w = 0.2*Ly;                    % Width of Channel
 x1_0 = 0.3;                    % x-Center for Cylinder 1
 y1_0 = 0.5;                    % y-Center for Cylinder 1
 r1 = w/6;                      % Radii of Cylinder 1
-x2_0 = 0.5;
-y2_0 = 0.5;
-r2 = r1;
+x2_0 = 0.5;                    % x-center of Cylinder 2
+y2_0 = 0.5;                    % y-center of Cylinder 2
+r2 = r1;                       % Radii of Cylinder 2 (equal to Cylinder 1)
 
-struct_name = 'viv_geo2cyl';       % Name for .vertex, .spring, etc files.
+struct_name = 'geo2cyl';       % Name for .vertex, .spring, etc files.
 
 
 % Call function to construct geometry
+
+%Create channel
 [xLag,yLag] = give_Me_Channel_Immsersed_Boundary_Geometry(ds,L,w,Lx,Ly);
+% Create Cylinder 1
 [x1Lag_Cy,y1Lag_Cy] = give_Me_Cylinder_Immsersed_Boundary_Geometry(ds,r1,x1_0,y1_0);
+% Create Cylinder 2
 [x2Lag_Cy,y2Lag_Cy] = give_Me_Cylinder_Immsersed_Boundary_Geometry(ds,r2,x2_0,y2_0);
 
+% Create tethering points to attach cylinders to springs
 x1Tether = x1_0;   % xValues you want to tether to on the channel
 x2Tether = x2_0;
 [indsTether_CY1, x1_0_new] = give_Me_Tethering_Pt_Indices(xLag,x1Tether);
@@ -77,10 +82,10 @@ plot(x1Lag_Cy,y1Lag_Cy,'r*'); hold on;
 plot(x2Lag_Cy, y2Lag_Cy, 'y*'); hold on;
 plot(x1Lag_Cy(1),y1Lag_Cy(1),'g*'); hold on;
 plot(x2Lag_Cy(1), y2Lag_Cy(2), 'b*'); hold on;
-plot(xLag(indsTether_CY1(1)),yLag(indsTether_CY1(1)),'b*'); hold on;
-plot(xLag(indsTether_CY2(1)), yLag(indsTether_CY2(1)), 'r*'); hold on;
-plot(xLag(indsTether_CY1(2)),yLag(indsTether_CY1(2)),'g*'); hold on;
-plot(xLag(indsTether_CY2(2)), yLag(indsTether_CY2(2)), 'm*'); hold on;
+%plot(xLag(indsTether_CY1(1)),yLag(indsTether_CY1(1)),'b*'); hold on;
+%plot(xLag(indsTether_CY2(1)), yLag(indsTether_CY2(1)), 'r*'); hold on;
+%plot(xLag(indsTether_CY1(2)),yLag(indsTether_CY1(2)),'g*'); hold on;
+%plot(xLag(indsTether_CY2(2)), yLag(indsTether_CY2(2)), 'm*'); hold on;
 plot(x1Lag_Cy(N/2+1),y1Lag_Cy(N/2+1),'b*'); hold on;
 plot(x2Lag_Cy(M/2+1), y2Lag_Cy(M/2+1), 'r*'); hold on;
 xlabel('x'); ylabel('y');
@@ -90,18 +95,19 @@ axis square;
 % Prints .vertex file!
 x_bothLag_Cy = [x1Lag_Cy x2Lag_Cy]; % concatenates the two cylinder x coordinate arrays
 y_bothLag_Cy = [y1Lag_Cy y2Lag_Cy];
+% concatenates the channel and cylinder coordinates into one long array for printing
 all_x_Lag = [xLag x_bothLag_Cy];
 all_y_Lag = [yLag y_bothLag_Cy];
 print_Lagrangian_Vertices(all_x_Lag,all_y_Lag,struct_name, 'w');
 
 % Prints .spring file!
 % these springs make the cylinder ridgid
-%k_Spring = 2.0e7; 
-%resting_length_tether1 = 2*r1;
-%offset = length(xLag);
+k_Spring = 2.0e7; 
+resting_length_cyl_inner_springs = 2*r1;
+offset = length(xLag);
 % since cylinders are identical, modified print_Lagrangian_Springs to take
 % in data for one, then it prints out two times as much data
-%print_Lagrangian_Springs(x1Lag_Cy,y1Lag_Cy, k_Spring,ds,r1,offset,indsTether_CY1, resting_length_tether1,struct_name, 'w');
+print_Lagrangian_Springs(x1Lag_Cy,y1Lag_Cy, k_Spring,ds,r1,offset,indsTether_CY1, resting_length_cyl_inner_springs,struct_name, 'w');
 
 
 % modified print_Lagrangian_Damped_Springs to take in second tether location
@@ -116,13 +122,13 @@ print_Lagrangian_Vertices(all_x_Lag,all_y_Lag,struct_name, 'w');
 
 % Change this like the undamped spring file
 % Prints .beam file!
-%k_Beam = 5.0e9;  
-%C1 = compute_Curvatures(x1Lag_Cy,y1Lag_Cy);
-%print_Lagrangian_Beams(x1Lag_Cy,y1Lag_Cy, k_Beam,C1,struct_name,offset, 'w');
+k_Beam = 5.0e9;  
+C1 = compute_Curvatures(x1Lag_Cy,y1Lag_Cy);
+print_Lagrangian_Beams(x1Lag_Cy,y1Lag_Cy, k_Beam,C1,struct_name,offset, 'w');
 
 % Prints .target file!
- k_Target = 2.5e7;
- print_Lagrangian_Target_Pts(xLag,k_Target,struct_name, 'w');
+k_Target = 2.5e7;
+print_Lagrangian_Target_Pts(all_x_Lag,k_Target,struct_name, 'w');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
